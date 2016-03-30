@@ -48,7 +48,7 @@ begin
   ;===================================;
 
     path_out     = "../DATA/SCM_IN_T639/"          ; Output directory
-    file_out_tmp = (/filename,"p1_poissonfill_test5","_SCM_T639.nc"/)   ; Output file name
+    file_out_tmp = (/filename,"chosen_gitlab_seaice","_SCM_T639.nc"/)   ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp/])
 

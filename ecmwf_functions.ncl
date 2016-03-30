@@ -645,42 +645,6 @@ begin
     delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
 
     ;================================================;
-    ;  t_sea_ice
-
-    print("    t_sea_ice")
-
-    data_path_matr = (/ecmwf_path,"/t_sea_ice_0001.grib"/)
-    data_path      = str_concat(data_path_matr)
-
-    ec_file = addfile(data_path,"r")
-    
-    t_sea_ice      = ec_file->ISTL1_GDS4_DBLY         ; t_sea_ice - layer 1
-    lat_ec_in      = ec_file->g4_lat_1                ; lat
-    lon_ec_in      = ec_file->g4_lon_2                ; lon
-    time           = ec_file->initial_time0_hours     ; hours since 1800-01-01 00:00
-
-    lat_ec_in!0 = "lat"
-    lon_ec_in!0 = "lon"
-
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
-
-    t_sea_ice!0         = "time"
-    t_sea_ice&time      = time
-    t_sea_ice!1         = "lat"
-    t_sea_ice&lat  = lat_ec_in
-    t_sea_ice!2         = "lon"
-    t_sea_ice&lon = lon_ec_in
-
-    ; reduce area data and temporal interpolation
-    data_tmp = t_sea_ice(time|:,{lat|lat_min:lat_max},{lon|lon_min:lon_max})
-    delete([/t_sea_ice/])
-
-    t_sea_ice = temp_interp(data_tmp,t_required)
-
-    delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
-
-    ;================================================;
     ;  z_sfc
 
     print("    z_sfc / orog")
@@ -794,6 +758,52 @@ begin
     q_skin = temp_interp(data_tmp,t_required)
 
     delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
+
+    ;================================================;
+    ;  t_sea_ice
+
+    print("    t_sea_ice")
+
+    dsize = dimsizes(q_skin_full)
+    t_sea_ice_tmp   = new((/dsize(0),dsize(1),dsize(2),4/),typeof(t_skin))
+
+    data_path_matr = (/ecmwf_path,"/t_sea_ice_0001.grib"/)
+    data_path      = str_concat(data_path_matr)
+    ec_file        = addfile(data_path,"r")
+    t_sea_ice_tmp(:,:,:,0)    = ec_file->ISTL1_GDS4_DBLY         ; t_sea_ice - layer 1
+    t_sea_ice_tmp(:,:,:,1)    = ec_file->ISTL2_GDS4_DBLY         ; t_sea_ice - layer 2
+    t_sea_ice_tmp(:,:,:,2)    = ec_file->ISTL3_GDS4_DBLY         ; t_sea_ice - layer 3
+    t_sea_ice_tmp(:,:,:,3)    = ec_file->ISTL4_GDS4_DBLY         ; t_sea_ice - layer 4
+    lat_ec_in                 = ec_file->g4_lat_1                ; lat
+    lon_ec_in                 = ec_file->g4_lon_2                ; lon
+    time                      = ec_file->initial_time0_hours     ; hours since 1800-01-01 00:00
+
+    lat_ec_in!0 = "lat"
+    lon_ec_in!0 = "lon"
+
+    ; change time so in **seconds** after UTC 6 April 2009 0000
+    time = (time - time_zero)*60*60
+
+    t_sea_ice_tmp!0         = "time"
+    t_sea_ice_tmp&time      = time
+    t_sea_ice_tmp!1         = "lat"
+    t_sea_ice_tmp&lat       = lat_ec_in
+    t_sea_ice_tmp!2         = "lon"
+    t_sea_ice_tmp&lon       = lon_ec_in
+    t_sea_ice_tmp!3         = "nlevs"
+    t_sea_ice_tmp&nlevs     = ispan(1,4,1)
+
+    t_sea_ice = t_sea_ice_tmp(time | :, nlevs | :, lat | :, lon | :)
+
+    ; reduce area data and temporal interpolation
+    data_tmp = t_sea_ice(time|:,nlevs|:,{lat|lat_min:lat_max},{lon|lon_min:lon_max})
+    delete([/t_sea_ice/])
+
+    t_sea_ice = temp_interp(data_tmp,t_required)
+
+    delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
+    delete([/t_sea_ice_tmp/])
+
 
     ;================================================;
     ;  t_soil
