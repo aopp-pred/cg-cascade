@@ -1053,7 +1053,7 @@ end
 ; blends data from CASCADE and ERAI to create coherent profile
 ;===============================================================
 
-function blend_data(in_data:double,in_data_erai:float,no_blend_over:float)
+function blend_data(in_data:float,in_data_erai:float,no_blend_over:float)
 
 local    in_data,in_data_erai,no_blend_over,dsize,frac_data,frac_erai,missingvals,d_blend,i_blend,\
          frac_data_4d,frac_erai_4d,blended_data,in1D,indices

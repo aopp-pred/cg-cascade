@@ -10,7 +10,7 @@
 ;
 ;===================================================================================================
 
-function calc_advection(in_data:double,u_data:double,v_data:double)
+function calc_advection(in_data:float,u_data:float,v_data:float)
 
 local earth_radius,pi,deg_to_rad,tmp_array,lat_array,lon_array,x_position,y_position,x_grad_horx_m,x_grad_hory_m,hor_tend_data
 
@@ -49,7 +49,7 @@ begin
 
 end
 
-function center_finite_diff_o6(in_data:double,x_data:float,mydim:integer,smoothme:logical)
+function center_finite_diff_o6(in_data:float,x_data:float,mydim:integer,smoothme:logical)
 
 local in_data,x_data,mydim,smoothme,dims_in,i_hor,in_data_tmp,x_data_tmp,out_data_tmp,in_data_rearr,out_data_rearr,x_data_rearr,mean_dx,in_data_sm
 
@@ -203,7 +203,7 @@ begin
 
 end
 
-function center_finite_diff_o4(in_data:double,x_data:float,mydim:integer,smoothme:logical)
+function center_finite_diff_o4(in_data:float,x_data:float,mydim:integer,smoothme:logical)
 
 local in_data,x_data,mydim,smoothme,dims_in,i_hor,in_data_tmp,x_data_tmp,out_data_tmp,in_data_rearr,out_data_rearr,x_data_rearr,mean_dx,in_data_sm
 
@@ -323,7 +323,7 @@ begin
 end
 
 
-function hor_derivative(in_data:double,smoothme:logical)
+function hor_derivative(in_data:float,smoothme:logical)
 
 local smoothme,earth_radius,pi,deg_to_rad,tmp_array,lat_array,lon_array,x_position,y_position,x_grad_horx_m,x_grad_hory_m
 

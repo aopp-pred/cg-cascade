@@ -1,6 +1,6 @@
 ; cascade_pressure_ec.ncl
 
-function cascade_pressure_ec(ps_data_out:double,ref_P0_out:float,hyam_ec_out:float,hybm_ec_out:float,hyai_ec_out:float,hybi_ec_out:float)
+function cascade_pressure_ec(ps_data_out:float,ref_P0_out:float,hyam_ec_out:float,hybm_ec_out:float,hyai_ec_out:float,hybi_ec_out:float)
 
 
 local    dsizes,dsizes2,tmparray,ps_data_tmp,ps_data_out,ps_data_tmp2,ref_P0_out_area,ec_pres_hybrid_levs,ec_pres_hybrid_hlevs

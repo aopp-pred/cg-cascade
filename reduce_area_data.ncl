@@ -1,6 +1,6 @@
 ; reduce_area_data.ncl
 
-function reduce_area_data(data_in:double,flag_subset:logical,set_lat_min:float,set_lat_max:float,set_lon_min:float,set_lon_max:float,no_dims:integer)
+function reduce_area_data(data_in:float,flag_subset:logical,set_lat_min:float,set_lat_max:float,set_lon_min:float,set_lon_max:float,no_dims:integer)
 
 local    data_in,flag_subset, set_lat_min, set_lat_max, set_lon_min, set_lon_max,no_dims
 

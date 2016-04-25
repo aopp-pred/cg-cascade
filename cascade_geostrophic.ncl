@@ -1,6 +1,6 @@
 ; cascade_geostrophic.ncl
 
-procedure cascade_geostrophic(fout:file,tv:double,hyam_ec_out:float,hybm_ec_out:float)
+procedure cascade_geostrophic(fout:file,tv:float,hyam_ec_out:float,hybm_ec_out:float)
 
 
 
