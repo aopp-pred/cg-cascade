@@ -73,25 +73,21 @@ begin
 
     ; assume 4D data
     if (mydim.eq.0) then
-       print("mydim 0")
        in_data_rearr = in_data_tmp
        out_data_rearr = out_data_tmp
        x_data_rearr  =  x_data
     end if
     if (mydim.eq.1) then
-       print("mydim 1")
        in_data_rearr  =  in_data_tmp(one|:,zero|:,two|:,three|:)
        out_data_rearr = out_data_tmp(one|:,zero|:,two|:,three|:)
        x_data_rearr   =   x_data_tmp(one|:,zero|:,two|:,three|:)
     end if
     if (mydim.eq.2) then
-       print("mydim 2")
        in_data_rearr  =  in_data_tmp(two|:,zero|:,one|:,three|:)
        out_data_rearr = out_data_tmp(two|:,zero|:,one|:,three|:)
        x_data_rearr   =   x_data_tmp(two|:,zero|:,one|:,three|:)
     end if
     if (mydim.eq.3) then
-       print("mydim 3")
        in_data_rearr  =  in_data_tmp(three|:,zero|:,one|:,two|:)
        out_data_rearr = out_data_tmp(three|:,zero|:,one|:,two|:)
        x_data_rearr   =   x_data_tmp(three|:,zero|:,one|:,two|:)
@@ -102,7 +98,6 @@ begin
 
     ; smooth dim 0 if necessary
     if (smoothme) then
-       print("smoothme true")
        in_data_sm = in_data_rearr
        do i_hor = 3,dims_in(0)-4 ;==============================================
           in_data_sm(i_hor,:,:,:) = (0.05*in_data_rearr(i_hor-3,:,:,:) + \
@@ -227,25 +222,21 @@ begin
 
     ; assume 4D data
     if (mydim.eq.0) then
-       print("mydim 0")
        in_data_rearr = in_data_tmp
        out_data_rearr = out_data_tmp
        x_data_rearr  =  x_data
     end if
     if (mydim.eq.1) then
-       print("mydim 1")
        in_data_rearr  =  in_data_tmp(one|:,zero|:,two|:,three|:)
        out_data_rearr = out_data_tmp(one|:,zero|:,two|:,three|:)
        x_data_rearr   =   x_data_tmp(one|:,zero|:,two|:,three|:)
     end if
     if (mydim.eq.2) then
-       print("mydim 2")
        in_data_rearr  =  in_data_tmp(two|:,zero|:,one|:,three|:)
        out_data_rearr = out_data_tmp(two|:,zero|:,one|:,three|:)
        x_data_rearr   =   x_data_tmp(two|:,zero|:,one|:,three|:)
     end if
     if (mydim.eq.3) then
-       print("mydim 3")
        in_data_rearr  =  in_data_tmp(three|:,zero|:,one|:,two|:)
        out_data_rearr = out_data_tmp(three|:,zero|:,one|:,two|:)
        x_data_rearr   =   x_data_tmp(three|:,zero|:,one|:,two|:)
@@ -256,7 +247,6 @@ begin
 
     ; smooth dim 0 if necessary
     if (smoothme) then
-       print("smoothme true")
        in_data_sm = in_data_rearr
        do i_hor = 2,dims_in(0)-3   ;==============================================
           in_data_sm(i_hor,:,:,:) = (0.5*in_data_rearr(i_hor-2,:,:,:) + \

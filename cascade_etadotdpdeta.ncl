@@ -75,6 +75,9 @@ begin
     etadotdpdeta_h!3         = "lon"
     etadotdpdeta_h&lon       = ec_pres_hybrid_hlevs&lon
 
+    etadotdpdeta_h@long_name = "Covariant Vert. Vel."
+    etadotdpdeta_h@units     = "Pa/s"
+
     ;-- save to file
     add_to_file(fout,etadotdpdeta_h  , "etadotdpdeta")
 

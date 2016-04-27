@@ -29,12 +29,10 @@ begin
                                          ; FOR TESTING - use REDUCED DATA
                                          ; FOR REAL    - use FULLDATA
                                          ;  \/   \/
-    generic_path  = "../DATA/WarmPool-4km/FULLDATA"
-    timestep_path    = (/"p1","p1"/)
+    generic_path     = "../DATA/WarmPool-4km/FULLDATA"
+    timestep_path    = (/ 1  , 1  /)       ; i.e.. digit from folder id  "p1" etc
     timestep_idx     = (/ 0  , 1  /)       ; idx within respective path
-    timestep_path_cf = (/"p1","p2"/)
-    timestep_idx_cf  = (/ 0  , 0  /)       ; p1 cloud fraction only has one time slice - offset by one
-    filename      = "CASCADE_WarmPool-4km_xfhfc_"
+    filename         = "CASCADE_WarmPool-4km_xfhfc_"
 
     ; ecmwf data
     ecmwf_path     = "../DATA/ForcingFilesT639"
@@ -42,7 +40,7 @@ begin
 ;;----
 ;;  in each section define variable number and set up full path:
 ;;  var_no = "409"
-;;  data_path_matr = (/generic_path,"/",timestep_path,"/",filename,timestep_path,"_",var_no,".nc"/)
+;;  data_path_matr = (/generic_path,"/p",tostring(timestep_path),"/",filename,"p",tostring(timestep_path),"_",var_no,".nc"/)
 ;;----
 
   ;===================================;
@@ -50,7 +48,7 @@ begin
   ;===================================;
 
     path_out     = "../DATA/SCM_IN_T639/"          ; Output directory
-    file_out_tmp = (/filename,"p1.0-p1.1_test_chosen_gl","_SCM_T639.nc"/)   ; Output file name
+    file_out_tmp = (/filename,"p1.0-p1.1_test_chosen_gl_float","_SCM_T639.nc"/)   ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp/])
 
@@ -83,6 +81,57 @@ begin
 
 
     flag_subset = True
+
+  ;===================================================;
+  ;  determine cloud frac timesteps from timestep_idx ;
+  ;===================================================;
+
+    dsize = dimsizes(timestep_path)
+    no_files = dsize(0)
+    idx_useme = new(dsize,integer)
+    do i=0,no_files-1
+       idx_useme(i) = 1
+    end do
+    delete([/i/])
+    flag_offset = False
+    do idx = 0,no_files-1
+       if (timestep_path(idx).eq.1).and.(timestep_idx(idx).eq.1)
+          print("== Cloud file offset from others ==")
+          idx_useme(idx) = 0
+          flag_offset = True
+       end if 
+    end do
+    if (.not.flag_offset)
+       if (timestep_path(0).ge.2) ; still need to create offset
+          print("== Cloud file offset from others ==")
+          idx_useme(0) = 0
+          flag_offset = True
+       end if
+    end if
+    timestep_path_cf = timestep_path(ind(idx_useme.eq.1))
+    timestep_idx_cf  = timestep_idx(ind(idx_useme.eq.1))
+ 
+    if flag_offset   ; have deleted one file from input, add new on end
+       timestep_path_cf_tmp = new(dsize,integer)
+       timestep_idx_cf_tmp  = new(dsize,integer)
+       timestep_path_cf_tmp(0:no_files-2) = timestep_path_cf
+       timestep_idx_cf_tmp(0:no_files-2)  = timestep_idx_cf
+ 
+       ; add extras on end
+       last_idx     = timestep_idx(no_files-1)
+       last_pathno  = timestep_path(no_files-1)
+       if (last_idx.eq.0) 
+          timestep_path_cf_tmp(no_files-1) = timestep_path(no_files-1)
+          timestep_idx_cf_tmp(no_files-1)  = 1
+       else
+          timestep_path_cf_tmp(no_files-1) = timestep_path(no_files-1)+1
+          timestep_idx_cf_tmp(no_files-1)  = 0
+       end if
+       delete([/timestep_path_cf,timestep_idx_cf/])
+       timestep_path_cf = timestep_path_cf_tmp
+       timestep_idx_cf  = timestep_idx_cf_tmp
+       delete([/timestep_path_cf_tmp,timestep_idx_cf_tmp/])
+    end if
 
   ;================================================;
   ;  Read in ECMWF file for reference co-ordinates ;
@@ -135,8 +184,10 @@ begin
   ; define co-ordinate arrays
     time           = ec_pres_hybrid_levs&time
     time!0         = "time"
-    time@units     = "seconds"
     time@long_name = "Time"
+    time@calendar  = "gregorian"
+    time@standard_name = "time" ;
+    time@units     = "days since 2009-04-06 00:00:00" ;
     nlev           = ec_pres_hybrid_levs&nlev
     nlev@units     = "count"
     nlev@long_name = "Atmospheric Model Levels"
@@ -161,7 +212,15 @@ begin
     start_date   = 20090406
     start_seconds = 0
     date = time+start_date               ;floor(time/(60*60*24))+start_date
+    date@long_name = "Date"
+    date@calendar  = "gregorian"
+    date@standard_name = "date" ;
+    date@units     = "days" ;
     second = date*0+start_seconds
+    second@long_name     = "Second"
+    second@calendar      = "gregorian"
+    second@standard_name = "second" ;
+    second@units         = "seconds" ;
     date!0   = "time"
     second!0 = "time"
     delete([/start_seconds,start_date/])
@@ -277,7 +336,7 @@ begin
     t_required = time
 
     ecmwf_data = read_ecmwf(ecmwf_path,lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     albedo          = ecmwf_data[0]
     anor            = ecmwf_data[1]
@@ -381,12 +440,13 @@ begin
     t_data_out&lon = t_data_areav&lon
 
     t_data_out_erai = read_ecmwf_pad(ecmwf_path,"T",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     t_data_new = blend_data(t_data_out,t_data_out_erai,no_blend_over)
 
     copy_VarCoords(t_data_out,t_data_new)
+    copy_VarAtts(t_data_areav,t_data_new)
     delete([/t_data_out,t_data_areav/])
 
     ;-- save to file
@@ -432,12 +492,13 @@ begin
     w_data_out&lon = w_data_areav&lon
 
     w_data_out_erai = read_ecmwf_pad(ecmwf_path,"W",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     w_data_new = blend_data(w_data_out,w_data_out_erai,no_blend_over)
 
     copy_VarCoords(w_data_out,w_data_new)
+    copy_VarAtts(w_data_areav,w_data_new)
 
     delete([/var_no,variable_name,w_data,w_data_areav,linlog,lev_dim,w_data_out_erai,no_blend_over,w_data_out/])
 
@@ -477,13 +538,14 @@ begin
     u_data_out&lon = u_data_areav&lon
 
     u_data_out_erai = read_ecmwf_pad(ecmwf_path,"U",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     u_data_new = blend_data(u_data_out,u_data_out_erai,no_blend_over)
  
     copy_VarCoords(u_data_out,u_data_new)
- 
+    copy_VarAtts(u_data_areav,u_data_new)
+
     delete([/var_no,variable_name,u_data,u_data_areav,linlog,lev_dim,u_data_out_erai,no_blend_over,u_data_out/])
 
    ;-- save to file
@@ -522,11 +584,12 @@ begin
     v_data_out&lon = v_data_areav&lon
 
     v_data_out_erai = read_ecmwf_pad(ecmwf_path,"V",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     v_data_new = blend_data(v_data_out,v_data_out_erai,no_blend_over)
     copy_VarCoords(v_data_out,v_data_new)
+    copy_VarAtts(v_data_areav,v_data_new)
 
     delete([/var_no,variable_name,v_data,v_data_areav,linlog,lev_dim,v_data_out_erai,no_blend_over,v_data_out/])
 
@@ -622,11 +685,11 @@ begin
 
     ; pad using erai data
     q_data_out_erai  = read_ecmwf_pad(ecmwf_path,"Q",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                       set_lon_min,set_lon_max,t_required)
     ql_data_out_erai = read_ecmwf_pad(ecmwf_path,"QL",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                       set_lon_min,set_lon_max,t_required)
     qi_data_out_erai = read_ecmwf_pad(ecmwf_path,"QI",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                       set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     q_data_new  = blend_data(q_mr_data_out, q_data_out_erai ,no_blend_over)
@@ -636,6 +699,18 @@ begin
     copy_VarCoords(q_mr_data_out, q_data_new)
     copy_VarCoords(ql_mr_data_out,ql_data_new)
     copy_VarCoords(qi_mr_data_out,qi_data_new)
+
+    q_data_new@long_name    = "Water vapor mixing ratio"
+    q_data_new@units        = "kg/kg"
+    q_data_new@cell_methods = "longitude: latitude: mean"
+    q_data_new@center       = "U.K. Met Office"
+
+    copy_VarAtts(q_data_new,ql_data_new)
+    ql_data_new@long_name   = "Liquid water mixing ratio"
+
+    copy_VarAtts(q_data_new,qi_data_new)
+    qi_data_new@long_name   = "Ice water mixing ratio"
+
     delete([/q_mr_data_out,ql_mr_data_out,qi_mr_data_out/])
 
     q_mr_data_out  = q_data_new
@@ -767,12 +842,14 @@ begin
     cf_data_out&lon       = cf_data_areav&lon
 
     cf_data_out_erai = read_ecmwf_pad(ecmwf_path,"CF",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec)
+                      set_lon_min,set_lon_max,t_required)
 
     no_blend_over = 5.0
     cf_data_new = blend_data(cf_data_out({time|time_st:time_en},nlev|:,lat|:,lon|:),cf_data_out_erai({time|time_st:time_en},nlev|:,lat|:,lon|:),no_blend_over)
 
     copy_VarCoords(cf_data_out,cf_data_new)
+    cf_data_new@long_name = "cloud fraction"
+    cf_data_new@units     = "0-1"
     delete([/cf_data_out/])
 
     cf_data_out = cf_data_new
@@ -786,7 +863,7 @@ begin
     ;delete([/cf_data_1D/])
 
     delete([/var_no,variable_name,linlog,lev_dim,time_list_cf,time_st,time_en/])
-    delete([/cf_data_out_erai,no_blend_over,cf_data_new/])
+    delete([/cf_data_out_erai,cf_data_areav,no_blend_over,cf_data_new/])
 
     add_to_file(fout, cf_data_out, "cloud_fraction")
     delete([/cf_data_out/])

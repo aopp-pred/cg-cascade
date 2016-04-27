@@ -135,6 +135,10 @@ begin
     copy_VarCoords(ec_pres_hybrid_levs,vg_out)
     copy_VarAtts(ec_pres_hybrid_levs,ug_out)
     copy_VarAtts(ec_pres_hybrid_levs,vg_out)
+    ug_out@long_name = "Geostrophic U wind"
+    ug_out@units     = "m/s"
+    vg_out@long_name = "Geostrophic V wind"
+    vg_out@units     = "m/s"
 
     add_to_file(fout,ug_out   , "ug")
     add_to_file(fout,vg_out   , "vg")

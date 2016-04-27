@@ -23,6 +23,9 @@ begin
 
     qtend_data_out = calc_advection(q_mr_data_out,u_data_out,v_data_out)
 
+    qtend_data_out@long_name = "Advective Q tendency" ;
+    qtend_data_out@units     = "kg/kg/s" ;
+
     ;-- save to file
     add_to_file(fout,qtend_data_out  , "qadv")
 

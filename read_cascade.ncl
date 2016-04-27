@@ -7,7 +7,7 @@
 ; performs temporal interpolation if flag_interp = .TRUE.
 ;===============================================================
 
-function read_cascade(generic_path:string,timestep_path:string,timestep_idx:integer,filename:string,\
+function read_cascade(generic_path:string,timestep_path:integer,timestep_idx:integer,filename:string,\
                             var_no:string,variable_name:string,flag_interp:logical,t_step_new_ec:float)
 
 local generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,\
@@ -31,7 +31,8 @@ begin
 
   do t_count = 0,dimsizes(timestep_path)-1
 
-     data_path_matr = (/generic_path,"/",timestep_path(t_count),"/",filename,timestep_path(t_count),"_",var_no,".nc"/)
+     data_path_matr = (/generic_path,"/p",tostring(timestep_path(t_count)),"/", \
+                        filename,"p",tostring(timestep_path(t_count)),"_",var_no,".nc"/)
      data_path      = str_concat(data_path_matr)
   
   ;  Input variable dimensions: (time, latitude, longitude) ;
@@ -42,7 +43,7 @@ begin
      time_data_tmp  = in_file->time
      no_time_in = dimsizes(time_data_tmp)
      time_in(t_count) = time_data_tmp(timestep_idx(t_count))
-
+     
      data_size = dimsizes(in_data_tmp)
 
      if (no_time_in.gt.1) then
@@ -82,6 +83,7 @@ begin
            print("##############################################################")
         end if
      end if
+     copy_VarAtts(in_data_tmp,in_data_ts)
      delete([/in_data_tmp,data_size/])
 
      ; set up the new empty array into which we will put our multiple time data
@@ -103,9 +105,9 @@ begin
         delete([/var_dims,i_dim,data_size/])
 
         ; copy over some attributes 
-        in_data@stash_code    = in_data_ts@stash_code
-        in_data@long_name     = in_data_ts@long_name
-
+;        in_data@stash_code    = in_data_ts@stash_code
+;        in_data@long_name     = in_data_ts@long_name
+        copy_VarAtts(in_data_ts,in_data)
      end if
 
      ; put time slice into in_data
@@ -123,11 +125,9 @@ begin
 
   ; hmc new
   in_data&time = time_in
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;   TEMPORAL INTERPOLATION IF REQUIRED
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
   if (flag_interp) then
      ; perform linear interpolation in time
      print("    perform temporal interpolation")
@@ -159,6 +159,14 @@ begin
      in_data_ti = in_data
      delete([/in_data/])
   end if
+
+  in_data_ti&time@calendar = "gregorian"
+  in_data_ti&time@standard_name = "time" ;
+  in_data_ti&time@units = "days since 2009-04-06 00:00:00" ;
+
+  ; delete time from attributes (not dimensions)
+  delete_VarAtts(in_data_ti,"time")
+  in_data_ti@center = "U.K. Met Office"
 
   return(in_data_ti)
 

@@ -22,7 +22,9 @@ begin
 
     utend_data_out = calc_advection(u_data_out,u_data_out,v_data_out)
 
-    ;-- save to file
+    utend_data_out@long_name = "Advective U tendency" ;
+    utend_data_out@units     = "m/s^2" ;
+
     add_to_file(fout,utend_data_out  , "uadv")
 
     delete([/u_data_out, v_data_out, utend_data_out/])

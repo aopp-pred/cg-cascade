@@ -22,6 +22,9 @@ begin
 
     vtend_data_out = calc_advection(v_data_out,u_data_out,v_data_out)
 
+    vtend_data_out@long_name = "Advective V tendency" ;
+    vtend_data_out@units     = "m/s^2" ;
+
     ;-- save to file
     add_to_file(fout,vtend_data_out  , "vadv")
 

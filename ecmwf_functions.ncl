@@ -3,8 +3,6 @@
 ;
 ; reads in entire file and then restricts to chosen times
 ; interpolates to required frequency from 6 or 12 hourly data
-;         -> 1 hourly if flag_interp = .FALSE.
-;         -> finer    if flag_interp = .TRUE.
 ;===============================================================
 
 ;============
@@ -21,28 +19,6 @@ local    in_data,t_required,time_dim
 
 begin
 
- ;======== OLD ===================
- ;   time_in = in_data&time
- ;   no_steps_tot = round(1+ (time_in(dimsizes(time_in)-1)-time_in(0))  /dt_new,3)
- ;   no_steps_per_old_step = round(1+(time_in(1)-time_in(0))/dt_new,3)
- ;   
- ;   time_out = new(no_steps_tot,typeof(time_in))
- ;   ; ensure time_in times are exactly in time_out
- ;   do i_time=0,dimsizes(time_in)-2   ; minus 1 as start at 0, minus 1 as only interpolate within times
- ;      time_tmp = fspan(time_in(i_time),time_in(i_time+1),no_steps_per_old_step)
- ;      i_st =    i_time *(no_steps_per_old_step-1)
- ;      i_en = (1+i_time)*(no_steps_per_old_step-1)
- ;      time_out(i_st:i_en) = time_tmp
- ;      delete([/time_tmp,i_st,i_en/])
- ;   end do
- ;
- ;   time_dim = 0
- ;   in_data_ti = linint1_n_Wrap (in_data&time,in_data,False,time_out,0,time_dim)
- ;   in_data_ti!0 = "time"
- ;
- ;   delete([/time_in,no_steps_tot,no_steps_per_old_step,time_out/])
- ;=================================
-
     time_dim = 0
     in_data_ti = linint1_n_Wrap (in_data&time,in_data,False,t_required,0,time_dim)
     in_data_ti!0 = "time"
@@ -57,13 +33,13 @@ end
 function read_ecmwf(ecmwf_path:string,lat_ec_out:float,lon_ec_out:float,\
                     flag_subset:logical,set_lat_min:float,set_lat_max:float,\
                     set_lon_min:float,set_lon_max:float,\
-                    flag_interp:logical,t_required:double,t_step_new_ec:float)
+                    t_required:double)
 
 local    ecmwf_path,lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-         set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec,\
+         set_lon_min,set_lon_max,t_required,\
          lat_min,lat_max,lon_min,lon_max,data_path_matr,data_path,\
          ec_file,lat_ec_in,lon_ec_in,time,data_tmp,data_tmp2,\
-         dt_new,time_zero,dsize,t_soil_tmp,q_soil_tmp,\
+         time_zero,dsize,t_soil_tmp,q_soil_tmp,\
          albedo,anor,heat_rough,high_veg_cover,high_veg_type, isor,\
          low_veg_cover,low_veg_type,lsm,mom_rough,open_sst,sdfor,sdor,\
          sea_ice_frct,slor,t_sea_ice,z_sfc,orog,t_skin,q_skin,t_soil,q_soil
@@ -90,12 +66,6 @@ begin
 
     time_zero = (158*365+51*366+31+28+31+5)*24
 
-    if (flag_interp) then
-       dt_new =  t_step_new_ec
-    else
-       dt_new = 1.0
-    end if
-
     ;================================================;
     ;  albedo
 
@@ -114,9 +84,12 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
- 
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian" 
+    time@standard_name = "time" ;
+    time@units = "days since 2009-04-06 00:00:00" ;
+
     albedo!0         = "time"
     albedo&time      = time
     albedo!1         = "lat"
@@ -150,8 +123,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"         
+    time@standard_name = "time" ;
+    time@units = "days since 2009-04-06 00:00:00" ;
 
     anor!0         = "time"
     anor&time      = time
@@ -186,8 +162,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"         
+    time@standard_name = "time"
+    time@units = "days since 2009-04-06 00:00:00"
 
     heat_rough!0         = "time"
     heat_rough&time      = time
@@ -228,8 +207,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     high_veg_cover!0         = "time"
     high_veg_cover&time      = time
@@ -264,8 +246,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     high_veg_type!0         = "time"
     high_veg_type&time      = time
@@ -300,8 +285,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     isor!0         = "time"
     isor&time      = time
@@ -337,8 +325,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     low_veg_cover!0         = "time" 
     low_veg_cover&time      = time
@@ -373,8 +364,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     low_veg_type!0         = "time"
     low_veg_type&time      = time
@@ -409,8 +403,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     lsm!0         = "time"
     lsm&time      = time
@@ -445,8 +442,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     mom_rough!0         = "time"
     mom_rough&time      = time
@@ -481,8 +481,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     open_sst!0         = "time"
     open_sst&time      = time
@@ -496,7 +499,6 @@ begin
     delete([/open_sst/])
 
     open_sst = temp_interp(data_tmp,t_required)
-
     delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
 
     ;================================================;
@@ -517,8 +519,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     sdfor!0         = "time"
     sdfor&time      = time
@@ -553,8 +558,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     sdor!0         = "time"
     sdor&time      = time
@@ -589,8 +597,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     sea_ice_frct!0         = "time"
     sea_ice_frct&time      = time
@@ -626,8 +637,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     slor!0         = "time"
     slor&time      = time
@@ -662,8 +676,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     z_sfc!0         = "time"
     z_sfc&time      = time
@@ -681,8 +698,10 @@ begin
     ; calculate orography from surface geopotential
     orog = z_sfc/9.80665
     copy_VarCoords(z_sfc,orog)
-    copy_VarAtts(z_sfc,orog)
 
+    z_sfc@long_name = "Surface Geopotential"
+    orog@long_name  = "Orographic height"
+    orog@units      = "m"
 
     delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
 
@@ -704,8 +723,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     t_skin!0         = "time"
     t_skin&time      = time
@@ -740,9 +762,12 @@ begin
     lat_ec_in!0 = "lat" 
     lon_ec_in!0 = "lon" 
  
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60 
- 
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
+
     q_skin!0         = "time"
     q_skin&time      = time
     q_skin!1         = "lat"
@@ -781,8 +806,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     t_sea_ice_tmp!0         = "time"
     t_sea_ice_tmp&time      = time
@@ -800,6 +828,8 @@ begin
     delete([/t_sea_ice/])
 
     t_sea_ice = temp_interp(data_tmp,t_required)
+
+    t_sea_ice@long_name = "Ice surface temperature layers 1-4" ;
 
     delete([/data_tmp,ec_file,lat_ec_in,lon_ec_in,time/])
     delete([/t_sea_ice_tmp/])
@@ -844,9 +874,12 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
  
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
- 
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
+
     t_soil_tmp!0         = "time"
     t_soil_tmp&time      = time
     t_soil_tmp!1         = "lat"
@@ -863,6 +896,7 @@ begin
     delete([/t_soil/])
  
     t_soil = temp_interp(data_tmp,t_required)
+    t_soil@long_name = "Soil temperature layers 1-4" ;
  
     delete([/data_tmp,lat_ec_in,lon_ec_in,time/])
     delete([/t_soil_tmp/])
@@ -904,8 +938,11 @@ begin
     lat_ec_in!0 = "lat"
     lon_ec_in!0 = "lon"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     q_soil_tmp!0         = "time"
     q_soil_tmp&time      = time
@@ -923,6 +960,7 @@ begin
     delete([/q_soil/])
 
     q_soil = temp_interp(data_tmp,t_required)
+    q_soil@long_name = "Volumetric soil water layers 1-4" ;
 
     delete([/data_tmp,lat_ec_in,lon_ec_in,time/])
     delete([/q_soil_tmp,dsize/])
@@ -940,10 +978,10 @@ end
 function read_ecmwf_pad(ecmwf_path:string,ecmwf_var:string,lat_ec_out:float,lon_ec_out:float,\
                     flag_subset:logical,set_lat_min:float,set_lat_max:float,\
                     set_lon_min:float,set_lon_max:float,\
-                    flag_interp:logical,t_required:double,t_step_new_ec:float)
+                    t_required:double)
 
 local    ecmwf_path,ecmwf_var,lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-         set_lon_min,set_lon_max,flag_interp,t_required,t_step_new_ec,\
+         set_lon_min,set_lon_max,t_required,\
          lat_min,lat_max,lon_min,lon_max,data_path_matr,data_path,\
          ec_file,lat_ec_in,lon_ec_in,time,hyam,hybm,data_tmp,\
          time_zero,erai_data
@@ -1024,8 +1062,11 @@ begin
     hyam!0      = "nlev"
     hybm!0      = "nlev"
 
-    ; change time so in **seconds** after UTC 6 April 2009 0000
-    time = (time - time_zero)*60*60
+    ; change time so in **days** after UTC 6 April 2009 0000
+    time = (time - time_zero)/24
+    time@calendar = "gregorian"
+    time@standard_name = "time" 
+    time@units = "days since 2009-04-06 00:00:00" 
 
     erai_data!0         = "time"
     erai_data&time      = time
