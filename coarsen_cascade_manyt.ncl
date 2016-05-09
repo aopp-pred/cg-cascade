@@ -30,8 +30,8 @@ begin
                                          ; FOR REAL    - use FULLDATA
                                          ;  \/   \/
     generic_path     = "../DATA/WarmPool-4km/FULLDATA"
-    timestep_path    = (/ 1  , 1  /)       ; i.e.. digit from folder id  "p1" etc
-    timestep_idx     = (/ 0  , 1  /)       ; idx within respective path
+    timestep_path    = (/ 1  , 2  /)       ; i.e.. digit from folder id  "p1" etc
+    timestep_idx     = (/ 1  , 0  /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
 
     ; ecmwf data
@@ -48,7 +48,7 @@ begin
   ;===================================;
 
     path_out     = "../DATA/SCM_IN_T639/"          ; Output directory
-    file_out_tmp = (/filename,"p1.0-p1.1_test_chosen_gl_float","_SCM_T639.nc"/)   ; Output file name
+    file_out_tmp = (/filename,"p1.1-p2.0_test_chosen_gl_seconds","_SCM_T639.nc"/)   ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp/])
 
@@ -56,7 +56,7 @@ begin
   ; define temporal interpolation     ;
   ;===================================;
 
-    t_step_new_ec = 15.0*60.0   ;;  /(24.0*60.0)     ; in seconds  : 15 minutes for T639. Ensure float. 
+    t_step_new_ec = 15*60         ; in seconds  : 15 minutes for T639. Ensure integer. 
     flag_interp   = True
 
   ;===================================;
@@ -187,7 +187,7 @@ begin
     time@long_name = "Time"
     time@calendar  = "gregorian"
     time@standard_name = "time" ;
-    time@units     = "days since 2009-04-06 00:00:00" ;
+    time@units     = "seconds since 2009-04-06 00:00:00" ;
     nlev           = ec_pres_hybrid_levs&nlev
     nlev@units     = "count"
     nlev@long_name = "Atmospheric Model Levels"
@@ -207,23 +207,23 @@ begin
     ;;-- set up initial time for input file
     ; date and second => initial time
     ; work out what the date is
-    ; time is in days since 2009-04-06 00:00:00
-
-    start_date   = 20090406
-    start_seconds = 0
-    date = time+start_date               ;floor(time/(60*60*24))+start_date
-    date@long_name = "Date"
-    date@calendar  = "gregorian"
-    date@standard_name = "date" ;
-    date@units     = "days" ;
-    second = date*0+start_seconds
-    second@long_name     = "Second"
-    second@calendar      = "gregorian"
-    second@standard_name = "second" ;
-    second@units         = "seconds" ;
-    date!0   = "time"
-    second!0 = "time"
-    delete([/start_seconds,start_date/])
+    ; time is in seconds since 2009-04-06 00:00:00
+;
+;    start_date   = 20090406
+;    start_seconds = 0
+;    date = time+start_date               ;floor(time/(60*60*24))+start_date
+;    date@long_name = "Date"
+;    date@calendar  = "gregorian"
+;    date@standard_name = "date" ;
+;    date@units     = "s" ;
+;    second = date*0+start_seconds
+;    second@long_name     = "Second"
+;    second@calendar      = "gregorian"
+;    second@standard_name = "second" ;
+;    second@units         = "seconds" ;
+;    date!0   = "time"
+;    second!0 = "time"
+;    delete([/start_seconds,start_date/])
 
   ;=================================================================;
   ; SET UP SAVING DATA TO NCL FILE                                  ;
@@ -283,14 +283,14 @@ begin
     add_to_file(fout,ec_pres_hybrid_levs  , "pressure_f")
     add_to_file(fout,ec_pres_hybrid_hlevs , "pressure_h")
     add_to_file(fout,ps_data_out          , "ps")
-    add_to_file(fout,date                 , "date")
-    add_to_file(fout,second               , "second")
+;    add_to_file(fout,date                 , "date")
+;    add_to_file(fout,second               , "second")
 
     ;=============================================================
     delete([/file_out,path_out,n_lat,n_lon,n_levp1,n_levs,nlev/])
     delete([/dimNames,dimSizes,dimUnlim/])
-    delete([/second,date,fAtt,nlevs/])
-    delete([/ps_data_out/])
+;    delete([/second,date/])
+    delete([/ps_data_out,fAtt,nlevs/])
 
   ;==================================================================================
   ; param 1. pressure on rho levels after timestep
@@ -448,6 +448,9 @@ begin
     copy_VarCoords(t_data_out,t_data_new)
     copy_VarAtts(t_data_areav,t_data_new)
     delete([/t_data_out,t_data_areav/])
+    ;- rename attribute 'coordinates' as clashes with Andrew Dawson scmtiles code
+    t_data_new@vertical_coordinates = t_data_new@coordinates
+    delete(t_data_new@coordinates)
 
     ;-- save to file
     add_to_file(fout,t_data_new,"t")
@@ -545,6 +548,9 @@ begin
  
     copy_VarCoords(u_data_out,u_data_new)
     copy_VarAtts(u_data_areav,u_data_new)
+    ;- rename attribute 'coordinates' as clashes with Andrew Dawson scmtiles code
+    u_data_new@vertical_coordinates = u_data_new@coordinates
+    delete(u_data_new@coordinates)
 
     delete([/var_no,variable_name,u_data,u_data_areav,linlog,lev_dim,u_data_out_erai,no_blend_over,u_data_out/])
 
@@ -590,6 +596,9 @@ begin
     v_data_new = blend_data(v_data_out,v_data_out_erai,no_blend_over)
     copy_VarCoords(v_data_out,v_data_new)
     copy_VarAtts(v_data_areav,v_data_new)
+    ;- rename attribute 'coordinates' as clashes with Andrew Dawson scmtiles code
+    v_data_new@vertical_coordinates = v_data_new@coordinates
+    delete(v_data_new@coordinates)
 
     delete([/var_no,variable_name,v_data,v_data_areav,linlog,lev_dim,v_data_out_erai,no_blend_over,v_data_out/])
 

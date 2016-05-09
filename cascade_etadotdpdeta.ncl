@@ -27,6 +27,7 @@ begin
     ;=====================
     ; calculation
 
+    ; n.b. time dimension must be in seconds!
     dpsdt = center_finite_diff_n(ps_data_out,ps_data_out&time,False,0,0)
     copy_VarCoords(ps_data_out,dpsdt)
     copy_VarAtts(ps_data_out,dpsdt)
