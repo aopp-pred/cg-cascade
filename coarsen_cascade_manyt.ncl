@@ -30,8 +30,8 @@ begin
                                          ; FOR REAL    - use FULLDATA
                                          ;  \/   \/
     generic_path     = "../DATA/WarmPool-4km/FULLDATA"
-    timestep_path    = (/ 1  , 2  /)       ; i.e.. digit from folder id  "p1" etc
-    timestep_idx     = (/ 1  , 0  /)       ; idx within respective path
+    timestep_path    = (/ 1  , 1  /)       ; i.e.. digit from folder id  "p1" etc
+    timestep_idx     = (/ 0  , 1  /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
 
     ; ecmwf data
@@ -48,7 +48,7 @@ begin
   ;===================================;
 
     path_out     = "../DATA/SCM_IN_T639/"          ; Output directory
-    file_out_tmp = (/filename,"p1.1-p2.0_test_chosen_gl_seconds","_SCM_T639.nc"/)   ; Output file name
+    file_out_tmp = (/filename,"p1.0-p1.1_test_chosen_gl_seconds_fluxes","_SCM_T639.nc"/)   ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp/])
 
@@ -398,7 +398,7 @@ begin
     add_to_file(fout,t_sea_ice      ,"t_sea_ice")
     add_to_file(fout,snow           ,"snow")
     add_to_file(fout,orog           ,"orog")
-    add_to_file(fout,t_skin         ,"t_skin")
+;    add_to_file(fout,t_skin         ,"t_skin")  ;HMC don't write to file: now reading in from CASCADE
     add_to_file(fout,q_skin         ,"q_skin")
     add_to_file(fout,t_soil         ,"t_soil")
     add_to_file(fout,q_soil         ,"q_soil")
@@ -892,6 +892,10 @@ begin
 ;   unweighted average because *input* fields equally spaced,
     sshf_data_out = area_hi2lores_Wrap (sshf_data&lon, sshf_data&lat, sshf_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
 
+    ;--FLIP FLUXES--
+    sshf_data_out=-1.0*sshf_data_out
+    sshf_data_out@standard_name = "surface_downward_sensible_heat_flux"
+
     ;-- save to file
     add_to_file(fout, sshf_data_out, "sfc_sens_flx")
     delete([/sshf_data_out,var_no,sshf_data/])
@@ -910,10 +914,33 @@ begin
 
 ;   unweighted average because *input* fields equally spaced,
     slhf_data_out = area_hi2lores_Wrap (slhf_data&lon, slhf_data&lat, slhf_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+    ;--FLIP FLUXES--
+    slhf_data_out=-1.0*slhf_data_out
+    slhf_data_out@standard_name = "surface_downward_latent_heat_flux"
 
     ;-- save to file
     add_to_file(fout, slhf_data_out, "sfc_lat_flx")
     delete([/slhf_data_out,var_no,slhf_data/])
+
+  ;==================================================================================
+  ; param  15. surface temperature (skin temperature)
+
+    print("surface temperature")
+
+    var_no = "24"
+    variable_name = "surface_temperature"
+
+    st_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    st_data = reduce_area_data(st_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
+    delete([/st_tmp/])
+
+;   unweighted average because *input* fields equally spaced,
+    st_data_out = area_hi2lores_Wrap (st_data&lon, st_data&lat, st_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    ;-- save to file
+    add_to_file(fout, st_data_out, "t_skin")
+    delete([/st_data_out,var_no,st_data/])
+
 
 
   end
