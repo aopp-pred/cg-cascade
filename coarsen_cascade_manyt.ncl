@@ -26,13 +26,11 @@ begin
   ; define paths to input variables   ;
   ;===================================;
 
-                                         ; FOR TESTING - use REDUCED DATA
-                                         ; FOR REAL    - use FULLDATA
-                                         ;  \/   \/
-    generic_path     = "../DATA/WarmPool-4km/FULLDATA"
-    timestep_path    = (/ 1  , 1  /)       ; i.e.. digit from folder id  "p1" etc
+    generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc"
+    timestep_path    = (/ 4  , 4  /)       ; i.e.. digit from folder id  "p1" etc
     timestep_idx     = (/ 0  , 1  /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
+    no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
     ecmwf_path     = "../DATA/ForcingFilesT639"
@@ -47,10 +45,13 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "../DATA/SCM_IN_T639/"          ; Output directory
-    file_out_tmp = (/filename,"p1.0-p1.1_test_chosen_gl_seconds_fluxes","_SCM_T639.nc"/)   ; Output file name
+    path_out     = "/group_workspaces/jasmin2/aopp/christensen/make_scm_input/DATA/SCM_IN_T639/"          ; Output directory
+    file_out_tmp = (/filename,"p",\
+                     tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
+                     tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
+                     "_test01_SCM_T639.nc"/)                                                               ; Output file name
     file_out = str_concat(file_out_tmp)
-    delete([/file_out_tmp/])
+    delete([/file_out_tmp,no_tsteps/])
 
   ;===================================;
   ; define temporal interpolation     ;
