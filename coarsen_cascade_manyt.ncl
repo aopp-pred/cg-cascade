@@ -23,12 +23,58 @@ load "cascade_geostrophic.ncl"
 begin
 
   ;===================================;
+  ; check input information from CLI  ;
+  ;===================================;
+
+    if (.not. isdefined("pindex1") .or. \
+        .not. isdefined("pindex2") .or. \
+        .not. isdefined("tindex1") .or. \
+        .not. isdefined("tindex2")) then
+      print("usage: ncl coarsen_cascade_manyt.ncl pindex1=I pindex2=J tindex1=i tindex2=j")
+      exit()
+    end if
+
+    if ((pindex1 .lt. 1) .or. (pindex1 .gt. 120)) then
+      print("error: pindex1 must be in the range: 1 <= pindex1 <= 120")
+      exit()
+    end if
+    if ((pindex2 .lt. 1) .or. (pindex2 .gt. 120)) then
+      print("error: pindex2 must be in the range: 1 <= pindex2 <= 120")
+      exit()
+    end if
+    if ((tindex1 .ne. 0) .and. (tindex1 .ne. 1)) then
+      print("error: tindex1 must be 0 or 1")
+      exit()
+    end if
+    if ((tindex2 .ne. 0) .and. (tindex2 .ne. 1)) then
+      print("error: tindex2 must be 0 or 1")
+      exit()
+    end if
+
+    if (pindex1 .eq. pindex2) then
+      if ((tindex1 .ne. 0) .or. (tindex2 .ne.1)) then
+        print("when pindex1=pindex2 require tindex1=0, tindex2=1")
+        exit()
+      end if
+    end if
+    if (pindex1 .ne. pindex2) then
+      if (pindex2 .ne. (pindex1 + 1)) then
+        print("when pindex1/=pindex2 require pindex2=pindex1+1")
+        exit()
+      end if
+      if ((tindex1 .ne. 1) .or. (tindex2 .ne. 0)) then
+        print("when pindex2=pindex1+1 require tindex1=1, tindex2=0")
+        exit()
+      end if
+    end if
+
+  ;===================================;
   ; define paths to input variables   ;
   ;===================================;
 
     generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc"
-    timestep_path    = (/ 4  , 4  /)       ; i.e.. digit from folder id  "p1" etc
-    timestep_idx     = (/ 0  , 1  /)       ; idx within respective path
+    timestep_path    = (/ pindex1, pindex2 /)       ; i.e.. digit from folder id  "p1" etc
+    timestep_idx     = (/ tindex1, tindex2 /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
     no_tsteps = dimsizes(timestep_path)
 
