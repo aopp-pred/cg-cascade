@@ -18,7 +18,8 @@ load "cascade_utend.ncl"
 load "cascade_vtend.ncl"
 load "cascade_geopotential.ncl"
 load "cascade_geostrophic.ncl"
-
+load "init_time.ncl"
+load "read_cascade_missingcloud.ncl"
 
 begin
 
@@ -29,8 +30,9 @@ begin
     if (.not. isdefined("pindex1") .or. \
         .not. isdefined("pindex2") .or. \
         .not. isdefined("tindex1") .or. \
-        .not. isdefined("tindex2")) then
-      print("usage: ncl coarsen_cascade_manyt.ncl pindex1=I pindex2=J tindex1=i tindex2=j")
+        .not. isdefined("tindex2") .or. \
+        .not. isdefined("lcloud")) then
+      print("usage: ncl coarsen_cascade_manyt.ncl pindex1=I pindex2=J tindex1=i tindex2=j lcloud=True/False")
       exit()
     end if
 
@@ -68,11 +70,18 @@ begin
       end if
     end if
 
+    if (.not.(typeof(lcloud).eq."logical"))
+      print("lcloud must be logical: True or False")
+      exit()
+    end if
+
+
   ;===================================;
   ; define paths to input variables   ;
   ;===================================;
 
-    generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc"
+;    generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc" ;JASMIN
+    generic_path     = "../DATA/WarmPool-4km/FULLDATA" ;CIRRUS
     timestep_path    = (/ pindex1, pindex2 /)       ; i.e.. digit from folder id  "p1" etc
     timestep_idx     = (/ tindex1, tindex2 /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
@@ -91,11 +100,12 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "/group_workspaces/jasmin2/aopp/christensen/make_scm_input/DATA/SCM_IN_T639/"          ; Output directory
+;    path_out     = "/group_workspaces/jasmin2/aopp/christensen/make_scm_input/DATA/SCM_IN_T639/"          ; Output directory JASMIN
+    path_out     = "../DATA/SCM_IN_T639/"          ; Output directory CIRRUS
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
-                     "_test01_SCM_T639.nc"/)                                                               ; Output file name
+                     "_test_new_time_SCM_T639.nc"/)                                                               ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp,no_tsteps/])
 
@@ -179,7 +189,6 @@ begin
        timestep_idx_cf  = timestep_idx_cf_tmp
        delete([/timestep_path_cf_tmp,timestep_idx_cf_tmp/])
     end if
-
   ;================================================;
   ;  Read in ECMWF file for reference co-ordinates ;
   ;================================================;
@@ -199,6 +208,17 @@ begin
   ;==========================
 
   ;==================================================================================
+  ; param -1. determine output time vector from trusted files
+
+    print("determine out time")
+
+    var_no = "409"
+    variable_name = "surface_air_pressure"
+
+    time_out = init_time(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+
+
+  ;==================================================================================
   ; param 0. surface pressure after timestep
   ;         (going to need this for inter-
   ;          polation to hybrid levels)
@@ -209,7 +229,7 @@ begin
     var_no = "409"
     variable_name = "surface_air_pressure"
 
-    ps_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    ps_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     ps_data = reduce_area_data(ps_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
     delete([/ps_tmp/])
 
@@ -349,7 +369,7 @@ begin
 
     var_no = "407"
     variable_name = "air_pressure"
-    prho_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    prho_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     prho_data = reduce_area_data(prho_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/prho_tmp/])
 
@@ -367,7 +387,7 @@ begin
   
     var_no = "408"  
     variable_name = "air_pressure"
-    ptheta_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    ptheta_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     ptheta_data = reduce_area_data(ptheta_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/ptheta_tmp/])
 
@@ -378,12 +398,10 @@ begin
   ;=========================================
   ;  INPUT ECMWF BOUNDARY FILES
   ;
-  ;    -> feed in required timesteps t_required
-
-    t_required = time
+  ;    -> feed in required timesteps time_out
 
     ecmwf_data = read_ecmwf(ecmwf_path,lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     albedo          = ecmwf_data[0]
     anor            = ecmwf_data[1]
@@ -464,7 +482,7 @@ begin
 
     var_no = "16004"
     variable_name = "data"
-    t_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    t_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     t_data = reduce_area_data(t_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/t_tmp/])
 
@@ -487,7 +505,7 @@ begin
     t_data_out&lon = t_data_areav&lon
 
     t_data_out_erai = read_ecmwf_pad(ecmwf_path,"T",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     t_data_new = blend_data(t_data_out,t_data_out_erai,no_blend_over)
@@ -515,7 +533,7 @@ begin
 
     var_no = "150"
     variable_name = "upward_air_velocity"
-    w_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    w_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     w_data_tmp = reduce_area_data(w_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/w_tmp/])
 
@@ -542,7 +560,7 @@ begin
     w_data_out&lon = w_data_areav&lon
 
     w_data_out_erai = read_ecmwf_pad(ecmwf_path,"W",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     w_data_new = blend_data(w_data_out,w_data_out_erai,no_blend_over)
@@ -565,7 +583,7 @@ begin
 
     var_no = "2"
     variable_name = "eastward_wind"
-    u_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    u_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     u_data = reduce_area_data(u_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/u_tmp/])
 
@@ -588,7 +606,7 @@ begin
     u_data_out&lon = u_data_areav&lon
 
     u_data_out_erai = read_ecmwf_pad(ecmwf_path,"U",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     u_data_new = blend_data(u_data_out,u_data_out_erai,no_blend_over)
@@ -614,7 +632,7 @@ begin
 
     var_no = "3"
     variable_name = "northward_wind"
-    v_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    v_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     v_data = reduce_area_data(v_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/v_tmp/])
 
@@ -637,7 +655,7 @@ begin
     v_data_out&lon = v_data_areav&lon
 
     v_data_out_erai = read_ecmwf_pad(ecmwf_path,"V",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     v_data_new = blend_data(v_data_out,v_data_out_erai,no_blend_over)
@@ -669,7 +687,7 @@ begin
     ;== read in water vapour
     var_no = "10"
     variable_name = "specific_humidity"
-    q_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    q_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     q_data = reduce_area_data(q_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/q_tmp/])
 
@@ -680,7 +698,7 @@ begin
     ;== read in liquid water
     var_no = "254"
     variable_name = "mass_fraction_of_cloud_liquid_water_in_air"
-    ql_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    ql_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     ql_data = reduce_area_data(ql_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/ql_tmp/])
 
@@ -691,7 +709,7 @@ begin
     ;== read in ice water
     var_no = "12"
     variable_name = "mass_fraction_of_cloud_ice_in_air"
-    qi_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    qi_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     qi_data = reduce_area_data(qi_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/qi_tmp/])
 
@@ -741,11 +759,11 @@ begin
 
     ; pad using erai data
     q_data_out_erai  = read_ecmwf_pad(ecmwf_path,"Q",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,t_required)
+                       set_lon_min,set_lon_max,time_out)
     ql_data_out_erai = read_ecmwf_pad(ecmwf_path,"QL",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,t_required)
+                       set_lon_min,set_lon_max,time_out)
     qi_data_out_erai = read_ecmwf_pad(ecmwf_path,"QI",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                       set_lon_min,set_lon_max,t_required)
+                       set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     q_data_new  = blend_data(q_mr_data_out, q_data_out_erai ,no_blend_over)
@@ -829,7 +847,12 @@ begin
     ;== read in large scale liquid
     var_no = "2312"
     variable_name = "data"
-    cf_lsl_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    if (lcloud)
+       print("lcloud True: special case for cloud files")
+       cf_lsl_tmp  = read_cascade_missingcloud(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    else
+       cf_lsl_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    end if
     cf_lsl_data = reduce_area_data(cf_lsl_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/cf_lsl_tmp/])
 
@@ -840,7 +863,12 @@ begin
     ;== read in large scale ice
     var_no = "2313"
     variable_name = "data"
-    cf_lsi_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    if (lcloud)
+       print("lcloud True: special case for cloud files")
+       cf_lsi_tmp  = read_cascade_missingcloud(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    else
+       cf_lsi_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    end if
     cf_lsi_data = reduce_area_data(cf_lsi_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/cf_lsi_tmp/])
 
@@ -851,7 +879,12 @@ begin
     ;== read in convective liquid
     var_no = "2314"
     variable_name = "data"
-    cf_csl_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    if (lcloud)
+       print("lcloud True: special case for cloud files")
+       cf_csl_tmp  = read_cascade_missingcloud(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    else
+       cf_csl_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    end if
     cf_csl_data = reduce_area_data(cf_csl_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/cf_csl_tmp/])
 
@@ -862,7 +895,12 @@ begin
     ;== read in convective ice
     var_no = "2315"
     variable_name = "data"
-    cf_csi_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    if (lcloud)
+       print("lcloud True: special case for cloud files")
+       cf_csi_tmp  = read_cascade_missingcloud(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    else
+       cf_csi_tmp  = read_cascade(generic_path,timestep_path_cf,timestep_idx_cf,filename,var_no,variable_name,flag_interp,time_out)
+    end if
     cf_csi_data = reduce_area_data(cf_csi_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,4)
     delete([/cf_csi_tmp/])
 
@@ -898,7 +936,7 @@ begin
     cf_data_out&lon       = cf_data_areav&lon
 
     cf_data_out_erai = read_ecmwf_pad(ecmwf_path,"CF",lat_ec_out,lon_ec_out,flag_subset,set_lat_min,set_lat_max,\
-                      set_lon_min,set_lon_max,t_required)
+                      set_lon_min,set_lon_max,time_out)
 
     no_blend_over = 5.0
     cf_data_new = blend_data(cf_data_out({time|time_st:time_en},nlev|:,lat|:,lon|:),cf_data_out_erai({time|time_st:time_en},nlev|:,lat|:,lon|:),no_blend_over)
@@ -932,7 +970,7 @@ begin
     var_no = "3217"
     variable_name = "surface_upward_sensible_heat_flux"
 
-    sshf_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    sshf_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     sshf_data = reduce_area_data(sshf_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
     delete([/sshf_tmp/])
 
@@ -955,7 +993,7 @@ begin
     var_no = "3234"
     variable_name = "surface_upward_latent_heat_flux"
 
-    slhf_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    slhf_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     slhf_data = reduce_area_data(slhf_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
     delete([/slhf_tmp/])
 
@@ -977,7 +1015,7 @@ begin
     var_no = "24"
     variable_name = "surface_temperature"
 
-    st_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,t_step_new_ec)
+    st_tmp  = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     st_data = reduce_area_data(st_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
     delete([/st_tmp/])
 
