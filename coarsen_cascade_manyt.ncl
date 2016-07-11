@@ -88,7 +88,7 @@ begin
     no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
-    ecmwf_path     = "../DATA/ForcingFilesT639"
+    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg01/static/ecmwf_forcing"
 
 ;;----
 ;;  in each section define variable number and set up full path:
@@ -100,8 +100,7 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-;    path_out     = "/group_workspaces/jasmin2/aopp/christensen/make_scm_input/DATA/SCM_IN_T639/"          ; Output directory JASMIN
-    path_out     = "../DATA/SCM_IN_T639/"          ; Output directory CIRRUS
+    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg01/data/scm_in/raw/"          ; Output directory
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
