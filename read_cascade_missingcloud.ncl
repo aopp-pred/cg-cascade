@@ -38,10 +38,7 @@ begin
   do t_count = 0,dimsizes(timestep_path)-1
  
 ; JASMIN
-;     data_path_matr = (/generic_path,"/p",tostring(timestep_path(t_count)),"/v0/",var_no,"/",    \
-;                        filename,"p",tostring(timestep_path(t_count)),"_",var_no,".nc"/)
-; CIRRUS
-     data_path_matr = (/generic_path,"/p",tostring(timestep_path(t_count)),"/",    \
+     data_path_matr = (/generic_path,"/p",tostring(timestep_path(t_count)),"/v0/",var_no,"/",    \
                         filename,"p",tostring(timestep_path(t_count)),"_",var_no,".nc"/)
  
      data_path      = str_concat(data_path_matr)
@@ -93,10 +90,7 @@ begin
   do t_count = 0,dimsizes(timestep_path_new)-1
 
 ; JASMIN
-;     data_path_matr = (/generic_path,"/p",tostring(timestep_path_new(t_count)),"/v0/",var_no,"/",    \
-;                        filename,"p",tostring(timestep_path_new(t_count)),"_",var_no,".nc"/)
-; CIRRUS
-     data_path_matr = (/generic_path,"/p",tostring(timestep_path_new(t_count)),"/",    \
+     data_path_matr = (/generic_path,"/p",tostring(timestep_path_new(t_count)),"/v0/",var_no,"/",    \
                         filename,"p",tostring(timestep_path_new(t_count)),"_",var_no,".nc"/)
 
      data_path      = str_concat(data_path_matr)

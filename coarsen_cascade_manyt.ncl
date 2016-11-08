@@ -80,15 +80,14 @@ begin
   ; define paths to input variables   ;
   ;===================================;
 
-;    generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc" ;JASMIN
-    generic_path     = "../DATA/WarmPool-4km/FULLDATA" ;CIRRUS
+    generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc"
     timestep_path    = (/ pindex1, pindex2 /)       ; i.e.. digit from folder id  "p1" etc
     timestep_idx     = (/ tindex1, tindex2 /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
     no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
-    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg01/static/ecmwf_forcing"
+    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg02/static/ecmwf_forcing"
 
 ;;----
 ;;  in each section define variable number and set up full path:
@@ -100,11 +99,11 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg01/data/scm_in/raw/"          ; Output directory
+    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg02/data/scm_in/raw/"          ; Output directory
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
-                     "_test_new_time_SCM_T639.nc"/)                                                               ; Output file name
+                     "_SCM_T639.nc"/)                                                               ; Output file name
     file_out = str_concat(file_out_tmp)
     delete([/file_out_tmp,no_tsteps/])
 
