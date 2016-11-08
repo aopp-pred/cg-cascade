@@ -1111,11 +1111,21 @@ begin
      d_blend = 1/no_blend_over 
      i_blend = 1
 
+     ;permute to put lev on end
+     in_data_perm = in_data(time|:,lat|:,lon|:,nlev|:)
+
      do i_lev = 0,dsize(1)-1
-       if any(missingvals(:,i_lev,:,:)) then ; data missing in CASCADE in_data
+       if num(missingvals(:,i_lev,:,:)).ge.(dsize(2)*dsize(3)) then ; essentially whole level missing in in_data
+         ;print("missing level in input data")
+         print(i_lev)
          frac_data(i_lev) = 0.0
          frac_erai(i_lev) = 1.0
        else
+         if any(missingvals(:,i_lev,:,:)) then ; some localised data missing
+           print("missing value in input data:")
+           print(num(missingvals(:,i_lev,:,:)))
+           in_data_perm(:,:,:,i_lev) = 0.5*( linmsg_n(in_data_perm(:,:,:,i_lev),-1,1) + linmsg_n(in_data_perm(:,:,:,i_lev),-1,2) )
+         end if
          if (i_blend.le.no_blend_over) then
             frac_data(i_lev) = i_blend*d_blend
             frac_erai(i_lev) = 1.0 - i_blend*d_blend
@@ -1126,6 +1136,9 @@ begin
          end if
        end if
      end do
+
+     ;permute back to put lev in 2nd place
+     in_data = in_data_perm(time|:,nlev|:,lat|:,lon|:)
 
      ; set fill values to zero
      in1D = ndtooned(in_data)
@@ -1140,10 +1153,10 @@ begin
 
      blended_data = in_data*frac_data_4d + in_data_erai*frac_erai_4d
 
-    delete([/dsize,frac_data,frac_erai,missingvals,d_blend,i_blend/])
-    delete([/frac_data_4d,frac_erai_4d/])
+     delete([/dsize,frac_data,frac_erai,missingvals,d_blend,i_blend/])
+     delete([/frac_data_4d,frac_erai_4d/])
 
-    return(blended_data)
+     return(blended_data)
 
 end
 
