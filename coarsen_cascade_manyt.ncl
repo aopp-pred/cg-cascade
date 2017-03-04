@@ -87,7 +87,7 @@ begin
     no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
-    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg02/static/ecmwf_forcing"
+    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg03/static/ecmwf_forcing"
 
 ;;----
 ;;  in each section define variable number and set up full path:
@@ -99,7 +99,7 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg02/data/scm_in/raw/"          ; Output directory
+    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg03/data/scm_in/raw/"          ; Output directory
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
@@ -113,6 +113,12 @@ begin
 
     t_step_new_ec = 15*60         ; in seconds  : 15 minutes for T639. Ensure integer. 
     flag_interp   = True
+
+  ;===================================;
+  ; define optional smoothing         ;
+  ;===================================;
+
+  smooth_flag = True
 
   ;===================================;
   ; select subset data for testing    ;
@@ -133,6 +139,11 @@ begin
 ;    set_lat_max = -10.0
 ;    set_lon_min = 45.0
 ;    set_lon_max = 55.0
+;; remove forcing regions at boundaries: move inwards 0.3 deg
+;    set_lat_min = -19.7
+;    set_lat_max =  19.7
+;    set_lon_min = 42.3
+;    set_lon_max = 176.7
 
 
     flag_subset = True
@@ -233,6 +244,13 @@ begin
 
 ;   unweighted average because *input* fields equally spaced,
     ps_data_out = area_hi2lores_Wrap (ps_data&lon, ps_data&lat, ps_data, False,  1, lon_ec_out&lon,lat_ec_out&lat,False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       ps_data_out_sm = smth9_Wrap(ps_data_out,0.5,0.25,False)
+       delete([/ps_data_out/])
+       ps_data_out = ps_data_out_sm
+       delete([/ps_data_out_sm/])
+    end if
 
     delete([/var_no,ps_data/])
 
@@ -373,6 +391,13 @@ begin
 
     prho_data_out = area_hi2lores_Wrap (prho_data&lon, prho_data&lat, prho_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       prho_data_out_sm = smth9_Wrap(prho_data_out,0.5,0.25,False)
+       delete([/prho_data_out/])
+       prho_data_out = prho_data_out_sm
+       delete([/prho_data_out_sm/])
+    end if
+
     delete([/var_no,variable_name,prho_data/])
 
   ;==================================================================================
@@ -390,6 +415,13 @@ begin
     delete([/ptheta_tmp/])
 
     ptheta_data_out = area_hi2lores_Wrap (ptheta_data&lon, ptheta_data&lat, ptheta_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       ptheta_data_out_sm = smth9_Wrap(ptheta_data_out,0.5,0.25,False)
+       delete([/ptheta_data_out/])
+       ptheta_data_out = ptheta_data_out_sm
+       delete([/ptheta_data_out_sm/])
+    end if
 
     delete([/var_no,variable_name/])
 
@@ -487,6 +519,13 @@ begin
     ; 1. area average
     t_data_areav = area_hi2lores_Wrap (t_data&lon, t_data&lat, t_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       t_data_areav_sm = smth9_Wrap(t_data_areav,0.5,0.25,False)
+       delete([/t_data_areav/])
+       t_data_areav = t_data_areav_sm
+       delete([/t_data_areav_sm/])
+    end if
+
     ; 2. vertical interpolation
     ; T is on *theta* coordinates
     linlog = 2   ; ln(p) interpolation
@@ -542,6 +581,13 @@ begin
     ; 1. area average
     w_data_areav = area_hi2lores_Wrap (w_data&lon, w_data&lat, w_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       w_data_areav_sm = smth9_Wrap(w_data_areav,0.5,0.25,False)
+       delete([/w_data_areav/])
+       w_data_areav = w_data_areav_sm
+       delete([/w_data_areav_sm/])
+    end if
+
     ; 2. vertical interpolation
     ; W is on *theta* coordinates
     linlog = 2   ; ln(p) interpolation
@@ -587,6 +633,13 @@ begin
 
     ; 1. area average
     u_data_areav = area_hi2lores_Wrap (u_data&lon, u_data&lat, u_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       u_data_areav_sm = smth9_Wrap(u_data_areav,0.5,0.25,False)
+       delete([/u_data_areav/])
+       u_data_areav = u_data_areav_sm
+       delete([/u_data_areav_sm/])
+    end if
 
     ; 2. vertical interpolation
     ; U is on *rho* coordinates
@@ -636,6 +689,13 @@ begin
 
     ; 1. area average
     v_data_areav = area_hi2lores_Wrap (v_data&lon, v_data&lat, v_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       v_data_areav_sm = smth9_Wrap(v_data_areav,0.5,0.25,False)
+       delete([/v_data_areav/])
+       v_data_areav = v_data_areav_sm
+       delete([/v_data_areav_sm/])
+    end if
 
     ; 2. vertical interpolation
     ; V is on *rho* coordinates
@@ -693,6 +753,13 @@ begin
     q_data_areav  = area_hi2lores_Wrap (q_data&lon, q_data&lat,  q_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/q_data/])
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       q_data_areav_sm = smth9_Wrap(q_data_areav,0.5,0.25,False)
+       delete([/q_data_areav/])
+       q_data_areav = q_data_areav_sm
+       delete([/q_data_areav_sm/])
+    end if
+
     ;== read in liquid water
     var_no = "254"
     variable_name = "mass_fraction_of_cloud_liquid_water_in_air"
@@ -703,6 +770,13 @@ begin
     ; 1.1 area average
     ql_data_areav  = area_hi2lores_Wrap (ql_data&lon, ql_data&lat,  ql_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/ql_data/])
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       ql_data_areav_sm = smth9_Wrap(ql_data_areav,0.5,0.25,False)
+       delete([/ql_data_areav/])
+       ql_data_areav = ql_data_areav_sm
+       delete([/ql_data_areav_sm/])
+    end if
                                                               
     ;== read in ice water
     var_no = "12"
@@ -714,6 +788,13 @@ begin
     ; 1.1 area average
     qi_data_areav  = area_hi2lores_Wrap (qi_data&lon, qi_data&lat,  qi_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/qi_data/])
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       qi_data_areav_sm = smth9_Wrap(qi_data_areav,0.5,0.25,False)
+       delete([/qi_data_areav/])
+       qi_data_areav = qi_data_areav_sm
+       delete([/qi_data_areav_sm/])
+    end if
 
     ; deduce specific mass of dry air
     qd_data_areav = 1 - (q_data_areav + ql_data_areav + qi_data_areav)
@@ -858,6 +939,13 @@ begin
     cf_lsl_data_areav = area_hi2lores_Wrap (cf_lsl_data&lon,cf_lsl_data&lat,cf_lsl_data,False, 1,lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/cf_lsl_data/])
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       cf_lsl_data_areav_sm = smth9_Wrap(cf_lsl_data_areav,0.5,0.25,False)
+       delete([/cf_lsl_data_areav/])
+       cf_lsl_data_areav = cf_lsl_data_areav_sm
+       delete([/cf_lsl_data_areav_sm/])
+    end if
+
     ;== read in large scale ice
     var_no = "2313"
     variable_name = "data"
@@ -873,6 +961,13 @@ begin
     ; 1. area average
     cf_lsi_data_areav = area_hi2lores_Wrap (cf_lsi_data&lon,cf_lsi_data&lat,cf_lsi_data,False, 1,lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/cf_lsi_data/])
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       cf_lsi_data_areav_sm = smth9_Wrap(cf_lsi_data_areav,0.5,0.25,False)
+       delete([/cf_lsi_data_areav/])
+       cf_lsi_data_areav = cf_lsi_data_areav_sm
+       delete([/cf_lsi_data_areav_sm/])
+    end if
 
     ;== read in convective liquid
     var_no = "2314"
@@ -890,6 +985,13 @@ begin
     cf_csl_data_areav = area_hi2lores_Wrap (cf_csl_data&lon,cf_csl_data&lat,cf_csl_data,False,1,lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/cf_csl_data/])
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       cf_csl_data_areav_sm = smth9_Wrap(cf_csl_data_areav,0.5,0.25,False)
+       delete([/cf_csl_data_areav/])
+       cf_csl_data_areav = cf_csl_data_areav_sm
+       delete([/cf_csl_data_areav_sm/])
+    end if
+
     ;== read in convective ice
     var_no = "2315"
     variable_name = "data"
@@ -905,6 +1007,13 @@ begin
     ; 1. area average
     cf_csi_data_areav = area_hi2lores_Wrap (cf_csi_data&lon,cf_csi_data&lat,cf_csi_data,False,1,lon_ec_out&lon,lat_ec_out&lat, False)
     delete([/cf_csi_data/])
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       cf_csi_data_areav_sm = smth9_Wrap(cf_csi_data_areav,0.5,0.25,False)
+       delete([/cf_csi_data_areav/])
+       cf_csi_data_areav = cf_csi_data_areav_sm
+       delete([/cf_csi_data_areav_sm/])
+    end if
 
     cf_data_areav = cf_lsl_data_areav+cf_lsi_data_areav+cf_csl_data_areav+cf_csi_data_areav
     copy_VarCoords(cf_csi_data_areav,cf_data_areav)    ; time, eta_h, lat, lon
@@ -975,6 +1084,13 @@ begin
 ;   unweighted average because *input* fields equally spaced,
     sshf_data_out = area_hi2lores_Wrap (sshf_data&lon, sshf_data&lat, sshf_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
 
+    if smooth_flag then   ;smooth data to remove unresolved features
+       sshf_data_out_sm = smth9_Wrap(sshf_data_out,0.5,0.25,False)
+       delete([/sshf_data_out/])
+       sshf_data_out = sshf_data_out_sm
+       delete([/sshf_data_out_sm/])
+    end if
+
     ;--FLIP FLUXES--
     sshf_data_out=-1.0*sshf_data_out
     sshf_data_out@standard_name = "surface_downward_sensible_heat_flux"
@@ -997,6 +1113,14 @@ begin
 
 ;   unweighted average because *input* fields equally spaced,
     slhf_data_out = area_hi2lores_Wrap (slhf_data&lon, slhf_data&lat, slhf_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       slhf_data_out_sm = smth9_Wrap(slhf_data_out,0.5,0.25,False)
+       delete([/slhf_data_out/])
+       slhf_data_out = slhf_data_out_sm
+       delete([/slhf_data_out_sm/])
+    end if
+
     ;--FLIP FLUXES--
     slhf_data_out=-1.0*slhf_data_out
     slhf_data_out@standard_name = "surface_downward_latent_heat_flux"
@@ -1019,6 +1143,13 @@ begin
 
 ;   unweighted average because *input* fields equally spaced,
     st_data_out = area_hi2lores_Wrap (st_data&lon, st_data&lat, st_data, False,  1, lon_ec_out&lon,lat_ec_out&lat, False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       st_data_out_sm = smth9_Wrap(st_data_out,0.5,0.25,False)
+       delete([/st_data_out/])
+       st_data_out = st_data_out_sm
+       delete([/st_data_out_sm/])
+    end if
 
     ;-- save to file
     add_to_file(fout, st_data_out, "t_skin")

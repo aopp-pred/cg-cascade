@@ -1116,8 +1116,6 @@ begin
 
      do i_lev = 0,dsize(1)-1
        if num(missingvals(:,i_lev,:,:)).ge.(dsize(2)*dsize(3)) then ; essentially whole level missing in in_data
-         ;print("missing level in input data")
-         print(i_lev)
          frac_data(i_lev) = 0.0
          frac_erai(i_lev) = 1.0
        else
