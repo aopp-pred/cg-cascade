@@ -87,7 +87,7 @@ begin
     no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
-    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg03/static/ecmwf_forcing"
+    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg04/static/ecmwf_forcing"
 
 ;;----
 ;;  in each section define variable number and set up full path:
@@ -99,7 +99,7 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg03/data/scm_in/raw/"          ; Output directory
+    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg04/data/scm_in/raw/"          ; Output directory
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
@@ -118,7 +118,8 @@ begin
   ; define optional smoothing         ;
   ;===================================;
 
-  smooth_flag = True
+  ;smooth_flag = True
+  smooth_flag = False
 
   ;===================================;
   ; select subset data for testing    ;
@@ -240,7 +241,7 @@ begin
 
     ps_tmp = read_cascade(generic_path,timestep_path,timestep_idx,filename,var_no,variable_name,flag_interp,time_out)
     ps_data = reduce_area_data(ps_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
-    delete([/ps_tmp/])
+    ;delete([/ps_tmp/]) ;save for z_sfc calc
 
 ;   unweighted average because *input* fields equally spaced,
     ps_data_out = area_hi2lores_Wrap (ps_data&lon, ps_data&lat, ps_data, False,  1, lon_ec_out&lon,lat_ec_out&lat,False)
@@ -449,8 +450,8 @@ begin
     sea_ice_frct    = ecmwf_data[13]
     slor            = ecmwf_data[14]
     t_sea_ice       = ecmwf_data[15]
-    z_sfc           = ecmwf_data[16]
-    orog            = ecmwf_data[17]
+    ;z_sfc           = ecmwf_data[16]
+    ;orog            = ecmwf_data[17]
     t_skin          = ecmwf_data[18]
     q_skin          = ecmwf_data[19]
     t_soil          = ecmwf_data[20]
@@ -492,16 +493,76 @@ begin
     add_to_file(fout,slor           ,"slor")
     add_to_file(fout,t_sea_ice      ,"t_sea_ice")
     add_to_file(fout,snow           ,"snow")
-    add_to_file(fout,orog           ,"orog")
+;    add_to_file(fout,orog           ,"orog")    ;HMC now get this from CASCADE: cg04
 ;    add_to_file(fout,t_skin         ,"t_skin")  ;HMC don't write to file: now reading in from CASCADE
     add_to_file(fout,q_skin         ,"q_skin")
     add_to_file(fout,t_soil         ,"t_soil")
     add_to_file(fout,q_soil         ,"q_soil")
-    add_to_file(fout,z_sfc          ,"z_sfc")
+;    add_to_file(fout,z_sfc          ,"z_sfc")   ;HMC now get this from CASCADE: cg04
 
     delete([/albedo,anor,heat_rough,high_veg_cover,high_veg_type,isor,low_veg_cover/])
-    delete([/low_veg_type,lsm,mom_rough,open_sst,sdfor,sdor,sea_ice_frct,slor,t_sea_ice,orog,snow/])
-    delete([/t_skin,q_skin,t_soil,q_soil,z_sfc/])
+    delete([/low_veg_type,lsm,mom_rough,open_sst,sdfor,sdor,sea_ice_frct,slor,t_sea_ice,snow/]) ;orog/])
+    delete([/t_skin,q_skin,t_soil,q_soil/]) ;z_sfc
+
+  ;==================================================================================
+  ; param 2b) orography and z_sfc
+  ;           get from CASCADE
+  ;           consistency with p_sfc. Also ECMWF has spectral features in z_sfc
+  ;
+  ;   n.b. fields constant so only saved for first timestep.
+
+
+    print("z_sfc/orog calculation")
+
+    var_no = "33"
+    variable_name = "surface_altitude"
+
+ ;-- just one timestep, with one file in it
+    data_path_matr = (/generic_path,"/p1/v0/",var_no,"/",filename,"p1_",var_no,".nc"/)
+    data_path      = str_concat(data_path_matr)
+    ;Input variable dimensions: (latitude, longitude) ;
+    in_file        = addfile(data_path,"r")
+    in_data_tmp    = in_file->$variable_name$
+    delete([/data_path_matr,data_path,in_file/])
+
+    orog_tmp = conform(ps_tmp,in_data_tmp,(/1,2/))
+    copy_VarCoords(ps_tmp,orog_tmp)
+    copy_VarAtts(ps_tmp,orog_tmp)
+    orog_tmp@stash_code = 33
+    orog_tmp@standard_name = "surface_altitude"
+
+    z_sfc_tmp = orog_tmp*9.80665
+    copy_VarCoords(ps_tmp,z_sfc_tmp)
+    copy_VarAtts(ps_tmp,z_sfc_tmp)
+    z_sfc_tmp@stash_code = 33
+    z_sfc_tmp@standard_name = "Surface geopotential"
+    z_sfc_tmp@units = "m**2 s**-2"
+
+    orog_data = reduce_area_data(orog_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
+    z_sfc_data = reduce_area_data(z_sfc_tmp,flag_subset,set_lat_min,set_lat_max,set_lon_min,set_lon_max,3)
+    delete([/ps_tmp,orog_tmp,z_sfc_tmp,in_data_tmp/])
+
+;   unweighted average because *input* fields equally spaced,
+    orog_data_out = area_hi2lores_Wrap (orog_data&lon, orog_data&lat, orog_data, False,  1, lon_ec_out&lon,lat_ec_out&lat,False)
+    z_sfc_data_out = area_hi2lores_Wrap (z_sfc_data&lon, z_sfc_data&lat, z_sfc_data, False,  1, lon_ec_out&lon,lat_ec_out&lat,False)
+
+    if smooth_flag then   ;smooth data to remove unresolved features
+       orog_data_out_sm = smth9_Wrap(orog_data_out,0.5,0.25,False)
+       delete([/orog_data_out/])
+       orog_data_out = orog_data_out_sm
+       delete([/orog_data_out_sm/])
+
+       z_sfc_data_out_sm = smth9_Wrap(z_sfc_data_out,0.5,0.25,False)
+       delete([/z_sfc_data_out/])
+       z_sfc_data_out = z_sfc_data_out_sm
+       delete([/z_sfc_data_out_sm/])
+    end if
+
+    ;-- save to file
+    add_to_file(fout,orog_data_out,  "orog")
+    add_to_file(fout,z_sfc_data_out, "z_sfc")
+
+    delete([/var_no,orog_data,z_sfc_data,orog_data_out,z_sfc_data_out/])
 
   ;==================================================================================
   ; param  3. Temperature
