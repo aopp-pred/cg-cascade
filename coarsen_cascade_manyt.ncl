@@ -81,13 +81,14 @@ begin
   ;===================================;
 
     generic_path     = "/badc/cascade/data/WarmPool-4km/xfhfc"
+;    generic_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg07/data/CASCADE"
     timestep_path    = (/ pindex1, pindex2 /)       ; i.e.. digit from folder id  "p1" etc
     timestep_idx     = (/ tindex1, tindex2 /)       ; idx within respective path
     filename         = "CASCADE_WarmPool-4km_xfhfc_"
     no_tsteps = dimsizes(timestep_path)
 
     ; ecmwf data
-    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg04/static/ecmwf_forcing"
+    ecmwf_path     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg07/static/ecmwf_forcing"
 
 ;;----
 ;;  in each section define variable number and set up full path:
@@ -99,7 +100,7 @@ begin
   ; define paths to output files      ;
   ;===================================;
 
-    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg04/data/scm_in/raw/"          ; Output directory
+    path_out     = "/group_workspaces/jasmin2/aopp/cg-cascade/cg07/data/scm_in/raw/"          ; Output directory
     file_out_tmp = (/filename,"p",\
                      tostring(timestep_path(0)),".",tostring(timestep_idx(0)),"-p",\
                      tostring(timestep_path(no_tsteps-1)),".",tostring(timestep_idx(no_tsteps-1)),\
@@ -118,8 +119,8 @@ begin
   ; define optional smoothing         ;
   ;===================================;
 
-  ;smooth_flag = True
-  smooth_flag = False
+  smooth_flag = True
+  ;smooth_flag = False
 
   ;===================================;
   ; select subset data for testing    ;
