@@ -1,5 +1,22 @@
 ; cascade_geopotential.ncl
 
+;================================================================================
+;   Copyright 2018 Hannah M. Christensen
+;
+;   Licensed under the Apache License, Version 2.0 (the "License");
+;   you may not use this file except in compliance with the License.
+;   You may obtain a copy of the License at
+;
+;       http://www.apache.org/licenses/LICENSE-2.0
+;
+;   Unless required by applicable law or agreed to in writing, software
+;   distributed under the License is distributed on an "AS IS" BASIS,
+;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+;   See the License for the specific language governing permissions and
+;   limitations under the License.
+;================================================================================
+
+
 function cascade_geopotential(fout:file,hyam_ec_out:float,hybm_ec_out:float,hyai_ec_out:float,hybi_ec_out:float,ref_P0_out:float)
 
 local fout, hyam_ec_out, hybm_ec_out, hyai_ec_out, hybi_ec_out, ref_P0_out, t_data_out, q_mr_data_out, ps_data_out, z_sfc , ec_pres_hybrid_levs, ec_pres_hybrid_hlevs, epsilon, tv_top, tv_bot , tv, z_levels, linlog, lev_dim,  zh_levels, zhdims
